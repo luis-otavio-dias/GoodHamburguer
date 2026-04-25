@@ -24,4 +24,9 @@ app.UseHttpsRedirection();
 
 app.MapPedidoEndpoints();
 
+app.MapSanduicheEndpoints();
+
+app.MapAcompanhamentoEndpoints();
+
+
 app.Run();
