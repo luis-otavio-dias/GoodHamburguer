@@ -1,0 +1,51 @@
+@GoodHamburguer_HostAddress = http://localhost:5176
+
+### Get all Sanduiches
+GET {{GoodHamburguer_HostAddress}}/api/Sanduiche
+Accept: application/json
+
+### Get Sanduiche by ID
+GET {{GoodHamburguer_HostAddress}}/api/Sanduiche/1
+Accept: application/json
+
+
+
+### Get all Acompanhamentos
+GET {{GoodHamburguer_HostAddress}}/api/Acompanhamento
+Accept: application/json
+
+### Get Acompanhamento by ID
+GET {{GoodHamburguer_HostAddress}}/api/Acompanhamento/1
+Accept: application/json
+
+
+
+### Get all Pedidos
+GET {{GoodHamburguer_HostAddress}}/api/Pedido
+Accept: application/json
+
+### Get Pedido by ID
+GET {{GoodHamburguer_HostAddress}}/api/Pedido/1
+Accept: application/json
+
+### Create new Pedido
+POST {{GoodHamburguer_HostAddress}}/api/Pedido
+Content-Type: application/json
+
+{
+    "sanduicheId": 1,
+    "acompanhamentoIds": [1, 2]
+}
+
+### Update Pedido
+PUT {{GoodHamburguer_HostAddress}}/api/Pedido/1
+Content-Type: application/json
+
+{
+    "id": 1,
+    "sanduicheId": 1,
+    "acompanhamentoId": [2]
+}
+
+### Delete Pedido
+DELETE {{GoodHamburguer_HostAddress}}/api/Pedido/1
