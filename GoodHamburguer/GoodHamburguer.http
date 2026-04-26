@@ -19,13 +19,17 @@ GET {{GoodHamburguer_HostAddress}}/api/Acompanhamento/1
 Accept: application/json
 
 
+### Get Cardápio
+GET {{GoodHamburguer_HostAddress}}/api/Cardapio
+Accept: application/json
+
 
 ### Get all Pedidos
 GET {{GoodHamburguer_HostAddress}}/api/Pedido
 Accept: application/json
 
 ### Get Pedido by ID
-GET {{GoodHamburguer_HostAddress}}/api/Pedido/1
+GET {{GoodHamburguer_HostAddress}}/api/Pedido/7
 Accept: application/json
 
 ### Create new Pedido
@@ -33,19 +37,19 @@ POST {{GoodHamburguer_HostAddress}}/api/Pedido
 Content-Type: application/json
 
 {
-    "sanduicheId": 1,
-    "acompanhamentoIds": [1, 2]
+    "sanduicheId": 2,
+    "acompanhamentoIds": [2]
 }
 
 ### Update Pedido
-PUT {{GoodHamburguer_HostAddress}}/api/Pedido/1
+PUT {{GoodHamburguer_HostAddress}}/api/Pedido/8
 Content-Type: application/json
 
-{
-    "id": 1,
-    "sanduicheId": 1,
-    "acompanhamentoId": [2]
+{ 
+    "sanduicheId": 2,
+    "acompanhamentoIds": [1]  
 }
 
 ### Delete Pedido
-DELETE {{GoodHamburguer_HostAddress}}/api/Pedido/1
+DELETE {{GoodHamburguer_HostAddress}}/api/Pedido/6
+Accept: application/json
