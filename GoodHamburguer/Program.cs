@@ -29,5 +29,7 @@ app.MapSanduicheEndpoints();
 
 app.MapAcompanhamentoEndpoints();
 
+app.MapCardapioEndpoints();
+
 
 app.Run();
