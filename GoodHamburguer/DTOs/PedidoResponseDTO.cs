@@ -5,5 +5,7 @@ public record PedidoResponseDTO(
     int Id,
     SanduicheResponseDTO Sanduiche,
     List<AcompanhamentoResponseDTO> Acompanhamentos,
+    decimal Subtotal,
+    decimal Desconto,
     decimal Total
 );

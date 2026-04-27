@@ -98,12 +98,19 @@ public static class PedidoEndpoints
 
     private static PedidoResponseDTO MapToResponseDTO(Pedido pedido)
     {
+        decimal subtotal = pedido.Sanduiche.Preco + pedido.Acompanhamentos.Sum(a => a.Preco);
+        decimal total = pedido.Total;
+        decimal desconto = (total - subtotal) * -1;
+
+
         return new PedidoResponseDTO(
             Id: pedido.Id,
             Sanduiche: new SanduicheResponseDTO(pedido.Sanduiche.Id, pedido.Sanduiche.Nome, pedido.Sanduiche.Preco),
             Acompanhamentos: pedido.Acompanhamentos
                 .Select(a => new AcompanhamentoResponseDTO(a.Id, a.Nome, a.Preco))
                 .ToList(),
+            Subtotal: subtotal,
+            Desconto: desconto,
             Total: pedido.Total
         );
     }
