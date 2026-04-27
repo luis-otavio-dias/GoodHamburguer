@@ -16,11 +16,11 @@ public static class PedidoEndpoints
         {
             var pedidos = await db.Pedidos
                 .Include(pedido => pedido.Sanduiche)
-                .Include(pedido => pedido.Acompanhamento)
+                .Include(pedido => pedido.Acompanhamentos)
                 .Select(pedido => new PedidoResponseDTO(
                     pedido.Id,
                     new SanduicheResponseDTO(pedido.Sanduiche.Id, pedido.Sanduiche.Nome, pedido.Sanduiche.Preco),
-                    pedido.Acompanhamento.Select(a => new AcompanhamentoResponseDTO(a.Id, a.Nome, a.Preco)).ToList(),
+                    pedido.Acompanhamentos.Select(a => new AcompanhamentoResponseDTO(a.Id, a.Nome, a.Preco)).ToList(),
                     pedido.Total
                 ))
                 .ToListAsync();
@@ -32,12 +32,12 @@ public static class PedidoEndpoints
         {
             var pedido = await db.Pedidos
                 .Include(pedido => pedido.Sanduiche)
-                .Include(pedido => pedido.Acompanhamento)
+                .Include(pedido => pedido.Acompanhamentos)
                 .Where(pedido => pedido.Id == id)
                 .Select(pedido => new PedidoResponseDTO(
                     pedido.Id,
                     new SanduicheResponseDTO(pedido.Sanduiche.Id, pedido.Sanduiche.Nome, pedido.Sanduiche.Preco),
-                    pedido.Acompanhamento.Select(a => new AcompanhamentoResponseDTO(a.Id, a.Nome, a.Preco)).ToList(),
+                    pedido.Acompanhamentos.Select(a => new AcompanhamentoResponseDTO(a.Id, a.Nome, a.Preco)).ToList(),
                     pedido.Total
                 ))
                 .FirstOrDefaultAsync();
@@ -51,7 +51,7 @@ public static class PedidoEndpoints
         group.MapPut("/{id}", async Task<Results<NoContent, NotFound, BadRequest<string>>> (int id, PedidoCreateRequestDTO dto, AppDbContext db) =>
         {
             var pedidoToUpdate = await db.Pedidos
-                .Include(p => p.Acompanhamento)
+                .Include(p => p.Acompanhamentos)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (pedidoToUpdate is null)
@@ -67,8 +67,7 @@ public static class PedidoEndpoints
             pedidoToUpdate.SanduicheId = sanduiche.Id;
             pedidoToUpdate.Sanduiche = sanduiche;
 
-            pedidoToUpdate.Acompanhamento.Clear();
-            pedidoToUpdate.AcompanhamentoIds.Clear();
+            pedidoToUpdate.Acompanhamentos.Clear();
             try
             {
                 foreach (var acompanhamentoId in dto.AcompanhamentoIds)
@@ -115,7 +114,10 @@ public static class PedidoEndpoints
                     {
                         return Results.NotFound($"Acompanhamento com ID {acompanhamentoId} não encontrado.");
                     }
-                    pedido.AdicionarAcompanhamento(acompanhamento);
+                    
+                    pedido.AdicionarAcompanhamento(
+                        acompanhamento
+                    );
                 }
             }
             catch (InvalidOperationException ex)
@@ -134,7 +136,7 @@ public static class PedidoEndpoints
         group.MapDelete("/{id}", async Task<Results<NoContent, NotFound>> (int id, AppDbContext db) =>
         {
             var pedido = await db.Pedidos
-                .Include(p => p.Acompanhamento)
+                .Include(p => p.Acompanhamentos)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (pedido is null)
