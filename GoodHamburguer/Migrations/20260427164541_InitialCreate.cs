@@ -13,6 +13,20 @@ namespace GoodHamburguer.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Acompanhamentos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Nome = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    Preco = table.Column<decimal>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Acompanhamentos", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Sanduiches",
                 columns: table => new
                 {
@@ -43,36 +57,40 @@ namespace GoodHamburguer.Migrations
                         column: x => x.SanduicheId,
                         principalTable: "Sanduiches",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Acompanhamentos",
+                name: "AcompanhamentoPedido",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "INTEGER", nullable: false)
-                        .Annotation("Sqlite:Autoincrement", true),
-                    Nome = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
-                    Preco = table.Column<decimal>(type: "TEXT", nullable: false),
-                    PedidoId = table.Column<int>(type: "INTEGER", nullable: true)
+                    AcompanhamentosId = table.Column<int>(type: "INTEGER", nullable: false),
+                    PedidoId = table.Column<int>(type: "INTEGER", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Acompanhamentos", x => x.Id);
+                    table.PrimaryKey("PK_AcompanhamentoPedido", x => new { x.AcompanhamentosId, x.PedidoId });
                     table.ForeignKey(
-                        name: "FK_Acompanhamentos_Pedidos_PedidoId",
+                        name: "FK_AcompanhamentoPedido_Acompanhamentos_AcompanhamentosId",
+                        column: x => x.AcompanhamentosId,
+                        principalTable: "Acompanhamentos",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_AcompanhamentoPedido_Pedidos_PedidoId",
                         column: x => x.PedidoId,
                         principalTable: "Pedidos",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.InsertData(
                 table: "Acompanhamentos",
-                columns: new[] { "Id", "Nome", "PedidoId", "Preco" },
+                columns: new[] { "Id", "Nome", "Preco" },
                 values: new object[,]
                 {
-                    { 1, "Batata Frita", null, 2.00m },
-                    { 2, "Refrigerante", null, 2.50m }
+                    { 1, "Batata Frita", 2.00m },
+                    { 2, "Refrigerante", 2.50m }
                 });
 
             migrationBuilder.InsertData(
@@ -86,8 +104,8 @@ namespace GoodHamburguer.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Acompanhamentos_PedidoId",
-                table: "Acompanhamentos",
+                name: "IX_AcompanhamentoPedido_PedidoId",
+                table: "AcompanhamentoPedido",
                 column: "PedidoId");
 
             migrationBuilder.CreateIndex(
@@ -99,6 +117,9 @@ namespace GoodHamburguer.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "AcompanhamentoPedido");
+
             migrationBuilder.DropTable(
                 name: "Acompanhamentos");
 

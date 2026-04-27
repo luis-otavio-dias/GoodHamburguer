@@ -10,14 +10,29 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace GoodHamburguer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260425163315_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260427170946_FixRelationPedidoAcompanhamento")]
+    partial class FixRelationPedidoAcompanhamento
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.7");
+
+            modelBuilder.Entity("AcompanhamentoPedido", b =>
+                {
+                    b.Property<int>("AcompanhamentosId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PedidoId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("AcompanhamentosId", "PedidoId");
+
+                    b.HasIndex("PedidoId");
+
+                    b.ToTable("AcompanhamentoPedido");
+                });
 
             modelBuilder.Entity("GoodHamburguer.Models.Acompanhamento", b =>
                 {
@@ -30,15 +45,10 @@ namespace GoodHamburguer.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
-                    b.Property<int?>("PedidoId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<decimal>("Preco")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PedidoId");
 
                     b.ToTable("Acompanhamentos");
 
@@ -115,11 +125,19 @@ namespace GoodHamburguer.Migrations
                         });
                 });
 
-            modelBuilder.Entity("GoodHamburguer.Models.Acompanhamento", b =>
+            modelBuilder.Entity("AcompanhamentoPedido", b =>
                 {
+                    b.HasOne("GoodHamburguer.Models.Acompanhamento", null)
+                        .WithMany()
+                        .HasForeignKey("AcompanhamentosId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("GoodHamburguer.Models.Pedido", null)
-                        .WithMany("Acompanhamento")
-                        .HasForeignKey("PedidoId");
+                        .WithMany()
+                        .HasForeignKey("PedidoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("GoodHamburguer.Models.Pedido", b =>
@@ -127,15 +145,10 @@ namespace GoodHamburguer.Migrations
                     b.HasOne("GoodHamburguer.Models.Sanduiche", "Sanduiche")
                         .WithMany()
                         .HasForeignKey("SanduicheId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Sanduiche");
-                });
-
-            modelBuilder.Entity("GoodHamburguer.Models.Pedido", b =>
-                {
-                    b.Navigation("Acompanhamento");
                 });
 #pragma warning restore 612, 618
         }
