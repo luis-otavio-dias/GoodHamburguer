@@ -24,6 +24,17 @@ public class AppDbContext : DbContext
             .WithMany() // Um Sanduiche pode estar em muitos Pedidos
             .OnDelete(DeleteBehavior.Restrict);
 
+
+        // Relação Muitos-para-Muitos: Pedido -> Acompanhamento
+        // Impede a exclusão de um Acompanhamento se ele estiver referenciado em qualquer Pedido
+        modelBuilder.Entity<Pedido>()
+            .HasMany(p => p.Acompanhamentos)
+            .WithMany() // Um Acompanhamento pode estar em muitos Pedidos
+            .UsingEntity(
+                r => r.HasOne(typeof(Acompanhamento)).WithMany().OnDelete(DeleteBehavior.Restrict),
+                l => l.HasOne(typeof(Pedido)).WithMany().OnDelete(DeleteBehavior.Cascade)
+            );
+
         // Dados iniciais (Seeding) para Sanduíches
         modelBuilder.Entity<Sanduiche>().HasData(
             new Sanduiche { Id = 1, Nome = "X Burguer", Preco = 5.00m },
