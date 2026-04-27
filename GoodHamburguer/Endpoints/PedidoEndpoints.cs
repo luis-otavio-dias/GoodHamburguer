@@ -17,12 +17,7 @@ public static class PedidoEndpoints
             var pedidos = await db.Pedidos
                 .Include(pedido => pedido.Sanduiche)
                 .Include(pedido => pedido.Acompanhamentos)
-                .Select(pedido => new PedidoResponseDTO(
-                    pedido.Id,
-                    new SanduicheResponseDTO(pedido.Sanduiche.Id, pedido.Sanduiche.Nome, pedido.Sanduiche.Preco),
-                    pedido.Acompanhamentos.Select(a => new AcompanhamentoResponseDTO(a.Id, a.Nome, a.Preco)).ToList(),
-                    pedido.Total
-                ))
+                .Select(pedido => MapToResponseDTO(pedido))
                 .ToListAsync();
             return pedidos;
         })
@@ -34,12 +29,7 @@ public static class PedidoEndpoints
                 .Include(pedido => pedido.Sanduiche)
                 .Include(pedido => pedido.Acompanhamentos)
                 .Where(pedido => pedido.Id == id)
-                .Select(pedido => new PedidoResponseDTO(
-                    pedido.Id,
-                    new SanduicheResponseDTO(pedido.Sanduiche.Id, pedido.Sanduiche.Nome, pedido.Sanduiche.Preco),
-                    pedido.Acompanhamentos.Select(a => new AcompanhamentoResponseDTO(a.Id, a.Nome, a.Preco)).ToList(),
-                    pedido.Total
-                ))
+                .Select(pedido => MapToResponseDTO(pedido))
                 .FirstOrDefaultAsync();
 
                 return pedido is null
@@ -48,7 +38,7 @@ public static class PedidoEndpoints
         })
         .WithName("GetPedidoById");
 
-        group.MapPut("/{id}", async Task<Results<NoContent, NotFound, BadRequest<string>>> (int id, PedidoCreateRequestDTO dto, AppDbContext db) =>
+        group.MapPut("/{id}", async Task<IResult> (int id, PedidoCreateRequestDTO dto, AppDbContext db) =>
         {
             var pedidoToUpdate = await db.Pedidos
                 .Include(p => p.Acompanhamentos)
@@ -56,80 +46,34 @@ public static class PedidoEndpoints
 
             if (pedidoToUpdate is null)
             {
-                return TypedResults.NotFound();
+                return Results.NotFound();
             }
 
-            var sanduiche = await db.Sanduiches.FindAsync(dto.SanduicheId);
-            if (sanduiche == null)
+            var error = await PopulatePedidoFromDTO(pedidoToUpdate, dto, db);
+            if (error != null)
             {
-                return TypedResults.BadRequest($"Sanduíche com ID {dto.SanduicheId} não encontrado.");
-            }
-            pedidoToUpdate.SanduicheId = sanduiche.Id;
-            pedidoToUpdate.Sanduiche = sanduiche;
-
-            pedidoToUpdate.Acompanhamentos.Clear();
-            try
-            {
-                foreach (var acompanhamentoId in dto.AcompanhamentoIds)
-                {
-                    var acompanhamento = await db.Acompanhamentos.FindAsync(acompanhamentoId);
-                    if (acompanhamento == null)
-                    {
-                        return TypedResults.BadRequest($"Acompanhamento com ID {acompanhamentoId} não encontrado.");
-                    }
-                    pedidoToUpdate.AdicionarAcompanhamento(acompanhamento);
-                }
-            }
-            catch (InvalidOperationException ex)
-            {
-                return TypedResults.BadRequest(ex.Message);
+                return error;
             }
 
-            pedidoToUpdate.AtualizarTotal();
             await db.SaveChangesAsync();
-            return TypedResults.NoContent();
+            return Results.NoContent();
         })
         .WithName("UpdatePedido");
 
-        group.MapPost("/", async (PedidoCreateRequestDTO dto, AppDbContext db) =>
+        group.MapPost("/", async Task<IResult> (PedidoCreateRequestDTO dto, AppDbContext db) =>
         {
-            var sanduiche = await db.Sanduiches.FindAsync(dto.SanduicheId);
-            if (sanduiche == null)
+            var pedido = new Pedido();
+            var error = await PopulatePedidoFromDTO(pedido, dto, db);
+            if (error != null)
             {
-                return Results.NotFound($"Sanduíche com ID {dto.SanduicheId} não encontrado.");
+                return error;
             }
-
-            var pedido = new Pedido
-            {
-                SanduicheId = dto.SanduicheId,
-                Sanduiche = sanduiche
-            };
-
-            try
-            {
-                foreach (var acompanhamentoId in dto.AcompanhamentoIds)
-                {
-                    var acompanhamento = await db.Acompanhamentos.FindAsync(acompanhamentoId);
-                    if (acompanhamento == null)
-                    {
-                        return Results.NotFound($"Acompanhamento com ID {acompanhamentoId} não encontrado.");
-                    }
-                    
-                    pedido.AdicionarAcompanhamento(
-                        acompanhamento
-                    );
-                }
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Results.BadRequest(ex.Message);
-            }
-
-            pedido.AtualizarTotal();
 
             db.Pedidos.Add(pedido);
             await db.SaveChangesAsync();
-            return TypedResults.Created($"/api/Pedido/{pedido.Id}",pedido);
+
+            var responseDto = MapToResponseDTO(pedido);
+            return Results.Created($"/api/Pedido/{pedido.Id}", responseDto);
         })
         .WithName("CreatePedido");
 
@@ -150,5 +94,75 @@ public static class PedidoEndpoints
             return TypedResults.NoContent();
         })
         .WithName("DeletePedido");
+    }
+
+    private static PedidoResponseDTO MapToResponseDTO(Pedido pedido)
+    {
+        return new PedidoResponseDTO(
+            Id: pedido.Id,
+            Sanduiche: new SanduicheResponseDTO(pedido.Sanduiche.Id, pedido.Sanduiche.Nome, pedido.Sanduiche.Preco),
+            Acompanhamentos: pedido.Acompanhamentos
+                .Select(a => new AcompanhamentoResponseDTO(a.Id, a.Nome, a.Preco))
+                .ToList(),
+            Total: pedido.Total
+        );
+    }
+
+
+    private static async Task<IResult?> PopulatePedidoFromDTO(Pedido pedido, PedidoCreateRequestDTO dto, AppDbContext db)
+    {
+        var sanduiche = await db.Sanduiches.FindAsync(dto.SanduicheId);
+        if (sanduiche == null)
+        {
+            return Results.NotFound($"Sanduíche com ID {dto.SanduicheId} não encontrado.");
+        }
+
+        pedido.SanduicheId = dto.SanduicheId;
+        pedido.Sanduiche = sanduiche;
+
+        pedido.Acompanhamentos.Clear();
+
+        var errorAcompanhamentos = await ProcessAcompanhamentosAsync(pedido, dto.AcompanhamentoIds, db);
+        if (errorAcompanhamentos != null)
+        {
+            return errorAcompanhamentos;
+        }
+
+        pedido.AtualizarTotal();
+        return null;
+    }
+
+    private static async Task<IResult?> ProcessAcompanhamentosAsync(Pedido pedido, List<int> acompanhamentoIds, AppDbContext db)
+    {
+        var acompanhamentos = await db.Acompanhamentos
+            .Where(a => acompanhamentoIds.Contains(a.Id))
+            .ToListAsync();
+
+        var idsEncontrados = acompanhamentos.Select(a => a.Id).ToList();
+
+        var idsInvalidos = acompanhamentoIds
+            .Where(id => !idsEncontrados.Contains(id))
+            .Distinct()
+            .ToList();
+
+        if (idsInvalidos.Count > 0)
+        {
+            return Results.NotFound($"Acompanhamentos com IDs {string.Join(", ", idsInvalidos)} não encontrados.");
+        }
+        
+        try
+        {
+            foreach (var acompanhamentoId in acompanhamentoIds)
+            {
+                var acompanhamento = acompanhamentos.First(a => a.Id == acompanhamentoId);
+                pedido.AdicionarAcompanhamento(acompanhamento);
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+
+        return null;
     }
 }
