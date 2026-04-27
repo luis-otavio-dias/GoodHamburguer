@@ -23,7 +23,7 @@ O projeto foi configurado para ser facilmente executável em qualquer ambiente l
 ### 1. Clonar e restaurar pacotes
 ```bash
 git clone <seu-repositorio>
-cd GoodHamburguer
+cd GoodHamburguer/GoodHamburguer
 dotnet restore
 ```
 
